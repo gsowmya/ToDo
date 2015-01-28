@@ -1,45 +1,115 @@
 package aasan.com.todo;
 
-import android.support.v7.app.ActionBarActivity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.ListView;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 public class MainActivity extends ActionBarActivity {
 
-    EditText inputText;
-    TextView outputLabel;
-    Button submitButton;
+    ListView lstTodo;
+    Button add;
+    EditText txtAddNew;
+    List<String> listItems = new ArrayList<String>();
+    ArrayAdapter<String> adapter;
+    SharedPreferences prefs = getApplicationContext().getSharedPreferences("todo", Context.MODE_PRIVATE);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        inputText = (EditText) findViewById(R.id.inputText);
-        outputLabel = (TextView) findViewById(R.id.outputLabel);
-        submitButton = (Button) findViewById(R.id.btnSubmit);
+        lstTodo = (ListView) findViewById(R.id.lstTodo);
+        add = (Button) findViewById(R.id.btnAdd);
+        txtAddNew = (EditText) findViewById(R.id.txtNewItem);
+        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, listItems);
+        lstTodo.setAdapter(adapter);
 
-        submitButton.setOnClickListener(new View.OnClickListener() {
+        txtAddNew.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(inputText.getText() != null) {
-                    String input = inputText.getText().toString();
-                    outputLabel.setText(input);
-                    Toast.makeText(getApplicationContext(),input,Toast.LENGTH_SHORT).show();
-                }
-
-
+                txtAddNew.setText("");
             }
         });
 
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (txtAddNew.getText() != null) {
+                    String item = txtAddNew.getText().toString();
+                    txtAddNew.setText("");
+                    listItems.add(item);
+                    updateSharedPreferences(listItems);
+                    adapter.notifyDataSetChanged();
+                }
+            }
+        });
+        lstTodo.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Object obj = parent.getItemAtPosition(position);
+                String s = (String) obj;
+                int requestCode = 100;
+                Intent i = new Intent(MainActivity.this, ListDetails.class);
+                i.putExtra("Details", s);
+                i.putExtra("Position", position);
+                startActivityForResult(i, requestCode);
+            }
+        });
     }
 
+    private List<String> getDataFromSharedPreferences() {
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("todo", Context.MODE_PRIVATE);
+        Set<String> stringSet = prefs.getStringSet("data", null);
+        List<String> stringList = new ArrayList<String>();
+        for (String s : stringSet) {
+            stringList.add(s);
+        }
+        return stringList;
+    }
+
+    private void updateSharedPreferences(List<String> stringList) {
+        Set<String> stringSet = new HashSet<String>();
+        for (String s : stringList) {
+            stringSet.add(s);
+        }
+
+        SharedPreferences.Editor e = prefs.edit();
+        e.putStringSet("data", stringSet);
+        e.commit();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 100) {
+            String operation = data.getStringExtra("operation");
+            String newString = data.getStringExtra("string");
+            int position = data.getIntExtra("position", 0);
+
+            if ("save".equalsIgnoreCase(operation)) {
+                listItems.set(position, newString);
+            } else {
+                listItems.remove(position);
+            }
+            updateSharedPreferences(listItems);
+            adapter.notifyDataSetChanged();
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
