@@ -27,7 +27,7 @@ public class MainActivity extends ActionBarActivity {
     EditText txtAddNew;
     List<String> listItems = new ArrayList<String>();
     ArrayAdapter<String> adapter;
-    SharedPreferences prefs = getApplicationContext().getSharedPreferences("todo", Context.MODE_PRIVATE);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +87,7 @@ public class MainActivity extends ActionBarActivity {
         for (String s : stringList) {
             stringSet.add(s);
         }
-
+        SharedPreferences prefs = getApplicationContext().getSharedPreferences("todo", Context.MODE_PRIVATE);
         SharedPreferences.Editor e = prefs.edit();
         e.putStringSet("data", stringSet);
         e.commit();
